@@ -1,7 +1,7 @@
-"use client";
-import Step from "@/component/UI/step/Step";
 import { useEffect, useState } from "react";
-import { StoryStep } from "../../interface/emoji";
+import { StoryStep } from "../../../../interface/emoji";
+import Step from "./Step";
+import { Meta, StoryObj } from "@storybook/react";
 
 const primaryStep: StoryStep = {
   selectedEmoji: "",
@@ -41,7 +41,7 @@ const primaryStep: StoryStep = {
   ],
 };
 
-export default function Home() {
+const Wrapper = () => {
   const [step, setStep] = useState<StoryStep>(primaryStep);
   const [timeLeft, setTimeLeft] = useState<number>(20);
 
@@ -56,12 +56,11 @@ export default function Home() {
   }, []);
 
   const handleVote = (emoji: string) => {
-
     setStep((s) => {
       if (!s.emojiContender) return s;
       const index = s.emojiContender?.findIndex((e) => e.value === emoji);
- 
-      if (index === -1 || !index) {
+
+      if (index === -1 || index === undefined) {
         return s;
       }
 
@@ -75,14 +74,34 @@ export default function Home() {
       return s;
     });
   };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <>
+      <button className="btn" onClick={() => setTimeLeft(20)}>
+        Init timer
+      </button>
       <Step
         step={step}
         stepNumber={0}
         timeLeft={timeLeft}
         handleEmojiClick={handleVote}
       />
-    </main>
+    </>
   );
-}
+};
+
+const meta = {
+  title: "EmojiStory/component/StepWrapper",
+  component: Step,
+  parameters: {
+    // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/react/configure/story-layout
+    layout: "centered",
+  },
+  // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/react/writing-docs/autodocs
+  tags: ["autodocs"],
+} satisfies Meta<typeof Wrapper>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default = () => <Wrapper />;
