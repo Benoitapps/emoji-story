@@ -58,7 +58,7 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // 2. Increment the vote on the selected emoji
   // 3. Update all clients with the latest vote
   @SubscribeMessage(E.EMOJI_VOTE)
-  handleVoteRequest(client: Socket, payload) {
+  handleVoteRequest(client: Socket, payload: P.EMOJI_VOTE) {
     let lastStep: I.StoryStep;
 
     if (this.story.steps.length === 0) {
@@ -66,6 +66,14 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     } else {
       lastStep = this.story.steps[this.story.steps.length - 1];
+    }
+
+    if (lastStep.selectedEmoji !== '') {
+      client.emit(
+        E.EMOJI_ERROR,
+        `Vote finished for this step (#${lastStep.order})`,
+      );
+      return;
     }
 
     const findEmoji: I.Emoji = lastStep.emojiContender.find(
@@ -117,7 +125,6 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit(E.STORY_UPDATE, { story: this.story });
   }
 
-  // Ils sont beaux mes émojis ?
   handleDisconnect(client: Socket) {
     this.clients.delete(client);
     console.log(`Client disconnected 🎉: ${client.id}`);
@@ -130,7 +137,15 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
         votes: [],
       });
     }
+    client.emit(E.STORY_UPDATE, {
+      story: this.story,
+    });
     console.log(`Client connected 💪: ${client.id}`);
+  }
+
+  @SubscribeMessage('reconnect')
+  handleReconnect(client: Socket) {
+    this.handleConnection(client);
   }
 
   @SubscribeMessage(E.STORY_REGENERATE)
