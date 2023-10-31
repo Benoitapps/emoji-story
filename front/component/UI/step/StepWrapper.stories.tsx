@@ -120,7 +120,6 @@ const Wrapper = () => {
         stepNumber={1}
         timeLeft={timeLeft}
         handleEmojiClick={handleVote}
-        currentVote={currentVote}
       />
     </>
   );
