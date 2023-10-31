@@ -53,7 +53,7 @@ export default function Home() {
         toast(`Step ${_stepNumber} 🪲`, {
           toastId: stepNumber,
           updateId: stepNumber,
-          autoClose: 1000,
+          autoClose: 500,
         });
       }
     });
