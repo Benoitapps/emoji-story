@@ -1,9 +1,11 @@
 "use client";
-import { StoryStep } from "../../../../interface/emoji";
-import { useEffect, useState } from "react";
+
+import { I } from "@/interface";
 
 interface Props {
-  step: StoryStep;
+  emojiContenders: I.Emoji[];
+  currentVote: string;
+  selectedEmoji: string;
   stepNumber: number;
   timeLeft: number;
   handleEmojiClick: (emoji: string) => void;
@@ -15,31 +17,54 @@ interface Props {
 // Afficher l'emoji selectionnée
 // Préparer le timer
 
-const Step = ({ step, stepNumber, timeLeft, handleEmojiClick }: Props) => {
+const Step = ({
+  emojiContenders,
+  stepNumber,
+  timeLeft,
+  handleEmojiClick,
+  currentVote,
+  selectedEmoji,
+}: Props) => {
   return (
     <div>
-      <span className="countdown">
+      <h1 className="text-5xl font-bold">Step Number : {stepNumber}</h1>
+      <span
+        className={`countdown flex justify-center ${
+          timeLeft === 0 ? "text-red" : "text-primary"
+        } text-xl my-3`}
+      >
+        {/*  @ts-ignore */}
         <span style={{ "--value": timeLeft }}></span>
       </span>
-      <h1 className="text-5xl font-bold">Step Number : {stepNumber}</h1>
       <div className="artboard phone-1">
-        <div className="flex flex-col">
-          {step?.emojiContender?.map((emoji, i) => (
-            <div key={i} className="flex">
-              <button
-                className="text-4xl w-50 mr-4 btn"
-                onClick={() => handleEmojiClick(emoji.value)}
-              >
-                {emoji.value}
-              </button>
-              <div className="w-50">{emoji.votes} votes</div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 content-center">
+          <div className="flex flex-col">
+            {emojiContenders?.map((emoji) => (
+              <div key={emoji.value} className="flex items-center">
+                <button
+                  className={`text-4xl w-50 mr-4 btn ${
+                    currentVote === emoji.value
+                      ? "btn-primary"
+                      : "btn-ghost glass"
+                  }`}
+                  onClick={() => handleEmojiClick(emoji.value)}
+                >
+                  {emoji.value}
+                </button>
+                <div className="w-50 text-current text-lg">
+                  {emoji.votes || 0}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div>
+            {selectedEmoji && (
+              <div className="border-2 rounded-lg p-1 border-pink-600 text-3xl text-center py-4">
+                {selectedEmoji}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="">
-        <h3>Emoji seléctionné :</h3>
-        <p>{step.selectedEmoji} </p>
       </div>
     </div>
   );

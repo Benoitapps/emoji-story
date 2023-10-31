@@ -4,10 +4,12 @@ export interface Emoji {
 }
 
 export interface StoryStep {
+  order: number;
   selectedEmoji: string;
   emojiContender?: Emoji[];
 }
 
 export interface Story {
   steps: StoryStep[];
+  openAiStory?: string;
 }
