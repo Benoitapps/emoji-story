@@ -1,10 +1,10 @@
 "use client";
 
 import { I } from "@/interface";
+import { useState } from "react";
 
 interface Props {
   emojiContenders: I.Emoji[];
-  currentVote: string;
   selectedEmoji: string;
   stepNumber: number;
   timeLeft: number;
@@ -22,9 +22,9 @@ const Step = ({
   stepNumber,
   timeLeft,
   handleEmojiClick,
-  currentVote,
   selectedEmoji,
 }: Props) => {
+  const [currentVote, setCurrentVote] = useState<string>("");
   return (
     <div>
       <h1 className="text-5xl font-bold">Step Number : {stepNumber}</h1>
@@ -47,7 +47,12 @@ const Step = ({
                       ? "btn-primary"
                       : "btn-ghost glass"
                   }`}
-                  onClick={() => handleEmojiClick(emoji.value)}
+                  onClick={() => {
+                    currentVote === emoji.value
+                      ? setCurrentVote("")
+                      : setCurrentVote(emoji.value);
+                    handleEmojiClick(emoji.value);
+                  }}
                 >
                   {emoji.value}
                 </button>

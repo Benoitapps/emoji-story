@@ -15,14 +15,16 @@ const socket: Socket<E.ServerToClientEvents, E.ClientToServerEvents> =
 export default function Home() {
   const [step, setStep] = useState<I.StoryStep | null>(null);
   const [story, setStory] = useState<I.Story | null>(null);
-  const [stepNumber, setStepNumber] = useState<number>(1);
+  const [stepNumber, setStepNumber] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(-1);
-  const [currentVote, setCurrentVote] = useState<string>("");
 
   useEffect(() => {
     socket.on(E.STORY_UPDATE, ({ story }) => {
       console.log({ story });
       setStory(story);
+      if (story.steps.length === 0) {
+        setStepNumber(0);
+      }
     });
 
     socket.on(E.STORY_ERROR, (message, data) => {
@@ -118,7 +120,6 @@ export default function Home() {
       <Step
         emojiContenders={step?.emojiContender || []}
         selectedEmoji={step?.selectedEmoji || ""}
-        currentVote={currentVote}
         stepNumber={stepNumber}
         timeLeft={timeLeft}
         handleEmojiClick={handleVote}
