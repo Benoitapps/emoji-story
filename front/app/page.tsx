@@ -1,14 +1,16 @@
 "use client";
 import Step from "@/component/UI/step/Step";
 import { useEffect, useState } from "react";
-import { Socket, io } from "socket.io-client";
+import { Manager, Socket, io } from "socket.io-client";
 import { P, E, I } from "@/interface";
 import { toast } from "react-toastify";
 
-const socket: Socket<E.ServerToClientEvents, E.ClientToServerEvents> = io(
-  process.env.NEXT_PUBLIC_SOCKET_URL as string,
-  { reconnection: true }
-);
+const manager = new Manager(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
+  reconnection: true,
+});
+
+const socket: Socket<E.ServerToClientEvents, E.ClientToServerEvents> =
+  manager.socket("/");
 
 export default function Home() {
   const [step, setStep] = useState<I.StoryStep | null>(null);
