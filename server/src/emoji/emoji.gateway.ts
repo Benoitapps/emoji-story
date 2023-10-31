@@ -1,4 +1,6 @@
 import {
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
@@ -172,25 +174,28 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // get from the payload the step to initialize
   @SubscribeMessage(E.STORY_STEP_GENERATE)
   async handleStepGeneration(
-    client: Socket,
-    { stepNumber }: P.STORY_STEP_GENERATE,
-  ) {
+    @ConnectedSocket() client: Socket,
+    @MessageBody() { stepNumber }: P.STORY_STEP_GENERATE,
+  ): Promise<number> {
     // if stepNumber = 1 & storyLength = 1
     const storyLength = this.story.steps.length;
     if (stepNumber < 0 || stepNumber - 1 >= this.stepLimit) {
       client.emit(E.EMOJI_ERROR, 'Invalid step number');
-      return;
+      return this.story.steps.length;
     }
     if (stepNumber <= storyLength) {
       client.emit(E.STORY_UPDATE, { story: this.story });
-      return;
+      return this.story.steps.length;
     }
     const previousStory = this.story.steps.find(
       ({ order }) => order === stepNumber - 1,
     );
+
+    console.log({ previousStory });
+
     if (previousStory && previousStory.selectedEmoji === '') {
       client.emit(E.STORY_ERROR, 'Previous step not finished !');
-      return;
+      return this.story.steps.length;
     }
 
     const newStep: I.StoryStep = {
@@ -210,7 +215,8 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.story.steps.push(newStep);
     }
     this.server.emit(E.STORY_UPDATE, { story: this.story });
-    return await this.startGame(newStep, client);
+    this.startGame(newStep, client);
+    return this.story.steps.length;
   }
 
   startGame(newStep: I.StoryStep, client: Socket) {

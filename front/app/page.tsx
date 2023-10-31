@@ -46,8 +46,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    socket.emit(E.STORY_STEP_GENERATE, { stepNumber });
-
+    socket.emit(E.STORY_STEP_GENERATE, { stepNumber }, setStepNumber);
     socket.on(E.STEP_UPDATE, ({ stepNumber: _stepNumber, timeLeft }) => {
       setTimeLeft(timeLeft);
       if (stepNumber !== _stepNumber) {
@@ -85,7 +84,13 @@ export default function Home() {
       <div className="flex gap-4">
         <button
           className="btn btn-lg"
-          onClick={() => setStepNumber((st) => st + 1)}
+          onClick={() =>
+            socket.emit(
+              E.STORY_STEP_GENERATE,
+              { stepNumber: stepNumber + 1 },
+              setStepNumber
+            )
+          }
         >
           Next Step
         </button>

@@ -22,7 +22,10 @@ export interface InterServerEvents {
 
 export interface ClientToServerEvents {
   [EMOJI_VOTE]: (payload: P.EMOJI_VOTE) => void;
-  [STORY_STEP_GENERATE]: (payload: P.STORY_STEP_GENERATE) => void;
+  [STORY_STEP_GENERATE]: (
+    payload: P.STORY_STEP_GENERATE,
+    setStep: (stepNumber: number) => void,
+  ) => void;
   [STORY_REGENERATE]: () => void;
   [STORY_INIT]: () => void;
 }
