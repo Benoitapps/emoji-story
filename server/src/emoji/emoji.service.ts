@@ -12,7 +12,7 @@ export class EmojiService {
       model: 'gpt-3.5-turbo-instruct',
       prompt: `Write a small (100 words) witty story with the following emojis: "${emojis.join(
         ', ',
-      )}" (in that order), Be concise and funny, with dark humour. Base the story on historical events, mythology, or science facts. Give me the story in french. Only use the emoji provided. Do not put the emojis in the response. ${extraPrompt}`,
+      )}" (in that order), Be concise and funny, with dark humour. Base the story on historical events, mythology, or science facts. Give me the story in farsi. Only use the emoji provided. Do not put the emojis in the response. ${extraPrompt}`,
       stream: false,
       max_tokens: 500,
     });

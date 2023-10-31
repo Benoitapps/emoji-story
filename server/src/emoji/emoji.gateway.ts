@@ -191,8 +191,6 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ({ order }) => order === stepNumber - 1,
     );
 
-    console.log({ previousStory });
-
     if (previousStory && previousStory.selectedEmoji === '') {
       client.emit(E.STORY_ERROR, 'Previous step not finished !');
       return this.story.steps.length;
