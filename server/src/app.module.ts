@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { OpenAIModule } from 'nestjs-openai';
 import { EmojiModule } from './emoji/emoji.module';
+import { ZoomModule } from './zoom/zoom.module';
 
 @Module({
-  imports: [EmojiModule],
+  imports: [EmojiModule, ZoomModule],
   controllers: [],
 })
 export class AppModule {}

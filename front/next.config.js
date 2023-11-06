@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: false,
   webpack: function (config) {
     config.externals.push({
       bufferutil: "bufferutil",
