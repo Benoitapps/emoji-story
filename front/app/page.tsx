@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Manager, Socket, io } from "socket.io-client";
 import { P, E, I } from "@/interface";
 import { toast } from "react-toastify";
+import { useHotkeys } from "react-hotkeys-hook";
 
 const manager = new Manager(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
   reconnection: true,
@@ -75,12 +76,17 @@ export default function Home() {
     socket.emit(E.EMOJI_VOTE, { emoji });
   };
 
+  
   const handleInit = () => {
     socket.emit(E.STORY_INIT);
     setStepNumber(0);
   };
+
+  useHotkeys("ctrl+i", handleInit);
+  useHotkeys("ctrl+r", () => socket.emit(E.STORY_REGENERATE));
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
       <div className="flex gap-4">
         <button
           className="btn btn-lg"
@@ -93,9 +99,6 @@ export default function Home() {
           }
         >
           Next Step
-        </button>
-        <button className="btn btn-lg btn-secondary" onClick={handleInit}>
-          Initialize
         </button>
       </div>
       <div className="text-sm breadcrumbs">
@@ -113,14 +116,8 @@ export default function Home() {
           ))}
         </ul>
       </div>
-      <div className="glass p-2">
+      <div className="glass p-4">
         <p className="text-xl">{story?.openAiStory}</p>
-        <button
-          className="btn m-auto inline-block"
-          onClick={() => socket.emit(E.STORY_REGENERATE)}
-        >
-          Regenerate
-        </button>
       </div>
       <Step
         emojiContenders={step?.emojiContender || []}
