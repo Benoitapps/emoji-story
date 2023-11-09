@@ -52,9 +52,9 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState<number>(20);
 
   useEffect(() => {
-    socket.on('story-update', (data) => {
-      
-    })
+    socket.on("story-update", (data) => {
+      console.log({ data });
+    });
   }, []);
 
   const handleVote = (emoji: string) => {

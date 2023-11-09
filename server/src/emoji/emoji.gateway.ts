@@ -12,7 +12,9 @@ import { Socket } from 'socket.io';
 
 import { Emoji, Story, StoryStep } from 'interface/emoji';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: true,
+})
 export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Socket;
@@ -21,7 +23,12 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private stepLimit: number = 8;
 
   story: Story = {
-    steps: [],
+    steps: [
+      {
+        selectedEmoji: '',
+        emojiContender: this.generateRandomEmojies(),
+      },
+    ],
   };
 
   // 1. Get the current step
@@ -86,7 +93,7 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     const newStep = {
       selectedEmoji: '',
-      emojiContender: this._generateRandomEmojies(),
+      emojiContender: this.generateRandomEmojies(),
     };
 
     if (stepNumber === 0) {
@@ -103,26 +110,16 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('story-update', this.story);
   }
 
-  private _getFixedLengthArray(): Emoji[] {
-    const emojiArray: Emoji[] = [];
-    for (let i = 0; i < this.emojiLimit; i++) {
-      emojiArray.push({ value: '', votes: 0 });
-    }
-    return emojiArray;
-  }
-
-  // Generates 8 random emojis
-  private _generateRandomEmojies(): Emoji[] {
-    const randomEmojis: Emoji[] = this._getFixedLengthArray();
-    for (let i = 0; i < this.emojiLimit; i++) {
-      // On récupére l'index d'un emoji aléatoire dans notre array allEmojis
+  // Generates X random emojis
+  private generateRandomEmojies(): Emoji[] {
+    const randomEmojis: Emoji[] = [];
+    while (randomEmojis.length < this.emojiLimit) {
       const randomIndex = Math.floor(Math.random() * allEmojis.length);
-
-      // On valorise les valeurs des emojis dans le tableau créé plus tôt
-      randomEmojis[i]['value'] = allEmojis[randomIndex];
-
-      // On supprime l'emoji selectioné de notre liste pour éviter des doublons
-      allEmojis.splice(randomIndex, 1);
+      if (
+        !randomEmojis.some((emoji) => emoji.value === allEmojis[randomIndex])
+      ) {
+        randomEmojis.push({ value: allEmojis[randomIndex], votes: 0 });
+      }
     }
     return randomEmojis;
   }
