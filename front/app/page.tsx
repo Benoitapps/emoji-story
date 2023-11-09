@@ -17,11 +17,17 @@ export default function Home() {
     socket.on("story-update", (data) => {
       setStory(data);
     });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
-  const step0 = story?.steps?.[0]
+  const step0 = story?.steps?.[0];
 
-  const handleVote = (emoji: string) => {};
+  const handleVote = (emoji: string) => {
+    socket.emit("step-vote", { stepOrder: 0, emoji });
+  };
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       {step0 && (

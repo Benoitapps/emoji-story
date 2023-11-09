@@ -7,9 +7,8 @@ import {
 } from '@nestjs/websockets';
 
 import { allEmojis } from './emojies';
-
 import { Socket } from 'socket.io';
-
+import { ServerToClientEvent, ClientToServerEvent } from 'interface/event';
 import { Emoji, Story, StoryStep } from 'interface/emoji';
 
 @WebSocketGateway({
@@ -17,12 +16,13 @@ import { Emoji, Story, StoryStep } from 'interface/emoji';
 })
 export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Socket;
+  server: Socket<ClientToServerEvent, ServerToClientEvent>;
 
   private emojiLimit: number = 8;
   private stepLimit: number = 8;
 
   story: Story = {
+    storyGPT: '',
     steps: [
       {
         selectedEmoji: '',
@@ -34,27 +34,27 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // 1. Get the current step
   // 2. Increment the vote on the selected emoji
   // 3. Update all clients with the latest vote
-  @SubscribeMessage('emoji-vote')
-  handleVoteRequest(client: Socket, payload: { selectedEmoji: string }) {
+  @SubscribeMessage('step-vote')
+  handleVoteRequest(
+    client: Socket,
+    payload: { emoji: string; stepOrder: number },
+  ) {
     let lastStep: StoryStep;
 
     if (this.story.steps.length === 0) {
-      client.emit('emoji-error', 'There is no story');
+      client.emit('user-error', 'There is no story');
       return;
     } else {
       lastStep = this.story.steps[this.story.steps.length - 1];
     }
 
     const findEmoji: Emoji = lastStep.emojiContender.find(
-      (emoji: Emoji) => emoji.value === payload.selectedEmoji,
+      (emoji: Emoji) => emoji.value === payload.emoji,
     );
 
     // Erreur si l'emoji n'est pas trouvé dans notre story
     if (!findEmoji) {
-      this.server.emit('emoji-error', 'Invalid selection of emoji', {
-        emoji: payload.selectedEmoji,
-        stepNumber: this.story.steps.length,
-      });
+      this.server.emit('user-error', new Error('Invalid selection of emoji'));
       return;
     }
 
@@ -88,7 +88,7 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       stepNumber >= this.stepLimit ||
       stepNumber > storyLength
     ) {
-      client.emit('emoji-error', 'Invalid step number');
+      client.emit('user-error', 'Invalid step number');
       return;
     }
     const newStep = {
@@ -98,6 +98,7 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (stepNumber === 0) {
       this.story = {
+        storyGPT: '',
         steps: [newStep],
       };
     } else {

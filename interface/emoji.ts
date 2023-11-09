@@ -10,4 +10,5 @@ export interface StoryStep {
 
 export interface Story {
   steps: StoryStep[];
+  storyGPT: string;
 }
