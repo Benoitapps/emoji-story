@@ -10,7 +10,7 @@ import { allEmojis } from './emojies';
 
 import { Socket } from 'socket.io';
 
-import { Emoji, Story, StoryStep } from '../../../interface/emoji';
+import { Emoji, Story, StoryStep } from 'interface/emoji';
 
 @WebSocketGateway()
 export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {

@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "daisyui": "^3.9.2",
+    "interface": "../interface",
     "next": "13.5.4",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "socket.io-client": "^4.7.2"
   },
   "devDependencies": {
     "@storybook/addon-essentials": "^7.4.6",

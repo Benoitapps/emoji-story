@@ -1,7 +1,13 @@
 "use client";
 import Step from "@/component/UI/step/Step";
 import { useEffect, useState } from "react";
-import { StoryStep } from "../../interface/emoji";
+import { StoryStep } from "interface/emoji";
+import { ClientToServerEvent, ServerToClientEvent } from "interface/event";
+import { Socket, io } from "socket.io-client";
+
+const socket: Socket<ServerToClientEvent, ClientToServerEvent> = io(
+  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000"
+);
 
 const primaryStep: StoryStep = {
   selectedEmoji: "",
@@ -46,21 +52,16 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState<number>(20);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft((t) => t - 1);
-    }, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
+    socket.on('story-update', (data) => {
+      
+    })
   }, []);
 
   const handleVote = (emoji: string) => {
-
     setStep((s) => {
       if (!s.emojiContender) return s;
       const index = s.emojiContender?.findIndex((e) => e.value === emoji);
- 
+
       if (index === -1 || !index) {
         return s;
       }
