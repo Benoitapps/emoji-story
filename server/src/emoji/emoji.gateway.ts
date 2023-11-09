@@ -63,11 +63,34 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const previousClientVote = this.clientsVote
-    .get(client)
-    ?.get(payload.stepOrder);
+      .get(client)
+      ?.get(payload.stepOrder);
 
-    // Rajouter le vote
-    findEmoji.votes++;
+    console.log({ previousClientVote, payload });
+
+    if (!previousClientVote) {
+      findEmoji.votes++;
+      this.clientsVote.get(client).set(payload.stepOrder, payload.emoji);
+    }
+
+    if (previousClientVote && previousClientVote !== payload.emoji) {
+      // Decrement previous vote
+      this.story.steps
+        .find(({ order }) => order === payload.stepOrder)
+        .emojiContender.find(
+          (emoji: Emoji) => emoji.value === previousClientVote,
+        ).votes--;
+
+      this.clientsVote.get(client).set(payload.stepOrder, payload.emoji);
+
+      findEmoji.votes++;
+    }
+
+    if (previousClientVote === payload.emoji) {
+      this.clientsVote.get(client).delete(payload.stepOrder);
+
+      findEmoji.votes--;
+    }
 
     // Emettre à tous les clients la nouvelle story
     //TODO envoyer la current step

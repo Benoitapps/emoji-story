@@ -26,14 +26,14 @@ export default function Home() {
   const step0 = story?.steps?.[0];
 
   const handleVote = (emoji: string) => {
-    socket.emit("step-vote", { stepOrder: 0, emoji });
+    socket.emit("step-vote", { stepOrder: 1, emoji });
   };
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       {step0 && (
         <Step
           step={step0}
-          stepNumber={0}
+          stepNumber={1}
           timeLeft={timeLeft}
           handleEmojiClick={handleVote}
         />
