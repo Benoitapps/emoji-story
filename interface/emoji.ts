@@ -5,6 +5,7 @@ export interface Emoji {
 
 export interface StoryStep {
   selectedEmoji: string;
+  order: number;
   emojiContender?: Emoji[];
 }
 

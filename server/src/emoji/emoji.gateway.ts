@@ -9,7 +9,7 @@ import {
 import { allEmojis } from './emojies';
 import { Socket } from 'socket.io';
 import { ServerToClientEvent, ClientToServerEvent } from 'interface/event';
-import { Emoji, Story, StoryStep } from 'interface/emoji';
+import { Emoji, Story } from 'interface/emoji';
 
 @WebSocketGateway({
   cors: true,
@@ -21,10 +21,14 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private emojiLimit: number = 8;
   private stepLimit: number = 8;
 
+  // Map<Socket, Map<StepOrder, Emoji>>
+  private clientsVote: Map<Socket, Map<number, string>> = new Map();
+
   story: Story = {
     storyGPT: '',
     steps: [
       {
+        order: 1,
         selectedEmoji: '',
         emojiContender: this.generateRandomEmojies(),
       },
@@ -39,16 +43,16 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client: Socket,
     payload: { emoji: string; stepOrder: number },
   ) {
-    let lastStep: StoryStep;
+    const step = this.story.steps.find(
+      ({ order }) => order === payload.stepOrder,
+    );
 
-    if (this.story.steps.length === 0) {
-      client.emit('user-error', 'There is no story');
+    if (!step) {
+      this.server.emit('user-error', new Error('Invalid step number'));
       return;
-    } else {
-      lastStep = this.story.steps[this.story.steps.length - 1];
     }
 
-    const findEmoji: Emoji = lastStep.emojiContender.find(
+    const findEmoji: Emoji = step.emojiContender.find(
       (emoji: Emoji) => emoji.value === payload.emoji,
     );
 
@@ -57,6 +61,10 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.emit('user-error', new Error('Invalid selection of emoji'));
       return;
     }
+
+    const previousClientVote = this.clientsVote
+    .get(client)
+    ?.get(payload.stepOrder);
 
     // Rajouter le vote
     findEmoji.votes++;
@@ -69,9 +77,11 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Ils sont beaux mes émojis ?
   handleDisconnect(client: Socket) {
     console.log(`Client disconnected 🎉: ${client.id}`);
+    this.clientsVote.delete(client);
   }
 
   handleConnection(client: Socket) {
+    this.clientsVote.set(client, new Map());
     client.emit('story-update', this.story);
     console.log(`Client connected 💪: ${client.id}`);
   }
@@ -92,6 +102,7 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     const newStep = {
+      order: stepNumber,
       selectedEmoji: '',
       emojiContender: this.generateRandomEmojies(),
     };
