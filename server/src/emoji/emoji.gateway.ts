@@ -66,8 +66,6 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .get(client)
       ?.get(payload.stepOrder);
 
-    console.log({ previousClientVote, payload });
-
     if (!previousClientVote) {
       findEmoji.votes++;
       this.clientsVote.get(client).set(payload.stepOrder, payload.emoji);
