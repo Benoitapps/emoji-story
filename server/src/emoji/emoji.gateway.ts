@@ -10,6 +10,7 @@ import { allEmojis } from './emojies';
 import { Socket } from 'socket.io';
 import { ServerToClientEvent, ClientToServerEvent } from 'interface/event';
 import { Emoji, Story } from 'interface/emoji';
+import { SchedulerRegistry } from '@nestjs/schedule';
 
 @WebSocketGateway({
   cors: true,
@@ -20,20 +21,29 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private emojiLimit: number = 8;
   private stepLimit: number = 8;
+  private stepTimeLimit: number = 15;
 
   // Map<Socket, Map<StepOrder, Emoji>>
   private clientsVote: Map<Socket, Map<number, string>> = new Map();
 
   story: Story = {
     storyGPT: '',
-    steps: [
-      {
-        order: 1,
-        selectedEmoji: '',
-        emojiContender: this.generateRandomEmojies(),
-      },
-    ],
+    steps: [],
   };
+
+  constructor(private schedulerRegistry: SchedulerRegistry) {}
+
+  // Ils sont beaux mes émojis ?
+  handleDisconnect(client: Socket) {
+    console.log(`Client disconnected 🎉: ${client.id}`);
+    this.clientsVote.delete(client);
+  }
+
+  handleConnection(client: Socket) {
+    this.clientsVote.set(client, new Map());
+    client.emit('story-update', this.story);
+    console.log(`Client connected 💪: ${client.id}`);
+  }
 
   // 1. Get the current step
   // 2. Increment the vote on the selected emoji
@@ -49,6 +59,13 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!step) {
       this.server.emit('user-error', new Error('Invalid step number'));
+      return;
+    }
+
+    if (
+      !this.schedulerRegistry.doesExist('interval', `step-${payload.stepOrder}`)
+    ) {
+      this.server.emit('user-error', new Error('Step not started or finished'));
       return;
     }
 
@@ -95,30 +112,13 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('story-update', this.story);
   }
 
-  // Ils sont beaux mes émojis ?
-  handleDisconnect(client: Socket) {
-    console.log(`Client disconnected 🎉: ${client.id}`);
-    this.clientsVote.delete(client);
-  }
-
-  handleConnection(client: Socket) {
-    this.clientsVote.set(client, new Map());
-    client.emit('story-update', this.story);
-    console.log(`Client connected 💪: ${client.id}`);
-  }
-
   // Initialize a story step
   // get from the payload the step to initialize
   @SubscribeMessage('story-step-handle')
   handleStepGeneration(client: Socket, { stepNumber }: { stepNumber: number }) {
     // if stepNumber = 1 & storyLength = 1
     const storyLength = this.story.steps.length;
-    console.log({ storyLength });
-    if (
-      stepNumber < 0 ||
-      stepNumber >= this.stepLimit ||
-      stepNumber > storyLength
-    ) {
+    if (stepNumber < 1 || stepNumber >= this.stepLimit) {
       client.emit('user-error', 'Invalid step number');
       return;
     }
@@ -128,17 +128,21 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       emojiContender: this.generateRandomEmojies(),
     };
 
-    if (stepNumber === 0) {
+    if (stepNumber === 1) {
       this.story = {
         storyGPT: '',
         steps: [newStep],
       };
     } else {
-      if (stepNumber <= storyLength - 1) {
+      if (stepNumber <= storyLength) {
         this.story.steps = this.story.steps.slice(stepNumber, storyLength);
       }
       this.story.steps.push(newStep);
     }
+
+    setTimeout(() => {
+      this.startTimer(stepNumber);
+    }, 3000);
 
     this.server.emit('story-update', this.story);
   }
@@ -155,5 +159,26 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
     return randomEmojis;
+  }
+
+  private startTimer(stepOrder: number) {
+    const step = this.story.steps.find(({ order }) => order === stepOrder);
+    if (!step) {
+      console.error('Invalid step', { stepOrder });
+      return;
+    }
+
+    let timeLeft = this.stepTimeLimit;
+
+    const stepIntervalFn = () => {
+      this.server.emit('step-time', { stepOrder, timeLeft });
+      if (timeLeft === 0) {
+        this.schedulerRegistry.deleteInterval(`step-${stepOrder}`);
+      }
+      timeLeft--;
+    };
+
+    const stepInterval = setInterval(stepIntervalFn, 1000);
+    this.schedulerRegistry.addInterval(`step-${stepOrder}`, stepInterval);
   }
 }
