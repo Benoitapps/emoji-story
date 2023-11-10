@@ -1,12 +1,10 @@
 "use client";
 import { StoryStep } from "../../../../interface/emoji";
-import { useEffect, useState } from "react";
 
 interface Props {
   step: StoryStep;
-  stepNumber: number;
   timeLeft: number;
-  handleEmojiClick: (emoji: string) => void;
+  handleEmojiClick: (emoji: string, stepOrder: number) => void;
 }
 
 // tu peux utiliser ça pour la step : <div className="artboard phone-1">320×568</div> :)
@@ -15,31 +13,35 @@ interface Props {
 // Afficher l'emoji selectionnée
 // Préparer le timer
 
-const Step = ({ step, stepNumber, timeLeft, handleEmojiClick }: Props) => {
+const Step = ({ step, timeLeft, handleEmojiClick }: Props) => {
   return (
-    <div>
-      <span className="countdown">
-        <span style={{ "--value": timeLeft }}></span>
-      </span>
-      <h1 className="text-5xl font-bold">Step Number : {stepNumber}</h1>
-      <div className="artboard phone-1">
-        <div className="flex flex-col">
-          {step?.emojiContender?.map((emoji, i) => (
-            <div key={i} className="flex">
-              <button
-                className="text-4xl w-50 mr-4 btn"
-                onClick={() => handleEmojiClick(emoji.value)}
-              >
-                {emoji.value}
-              </button>
-              <div className="w-50">{emoji.votes} votes</div>
-            </div>
-          ))}
+    <div className="w-full m-4">
+      <h1 className="text-5xl font-bold text-center my-12">
+        {step.selectedEmoji} Step Number : {step.order} {"   "}
+      </h1>
+      {!step.selectedEmoji && (
+        <div className="flex justify-center my-6">
+          <span
+            className={`countdown text-6xl ${
+              timeLeft !== 0 ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            <span style={{ "--value": timeLeft }}></span>
+          </span>
         </div>
-      </div>
-      <div className="">
-        <h3>Emoji seléctionné :</h3>
-        <p>{step.selectedEmoji} </p>
+      )}
+      <div className="flex flex-col lg:flex-row lg:gap-10 justify-around m-auto flex-wrap">
+        {step?.emojiContender?.map((emoji) => (
+          <div key={emoji.value} className="flex">
+            <button
+              className="text-4xl w-50 mr-4 btn scale-125"
+              onClick={() => handleEmojiClick(emoji.value, step.order)}
+            >
+              {emoji.value}
+            </button>
+            <div className="w-50">{emoji.votes} votes</div>
+          </div>
+        ))}
       </div>
     </div>
   );

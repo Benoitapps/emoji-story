@@ -19,9 +19,9 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Socket<ClientToServerEvent, ServerToClientEvent>;
 
-  private emojiLimit: number = 8;
-  private stepLimit: number = 8;
-  private stepTimeLimit: number = 15;
+  private emojiLimit: number = 15;
+  private stepLimit: number = 3;
+  private stepTimeLimit: number = 5;
 
   // Map<Socket, Map<StepOrder, Emoji>>
   private clientsVote: Map<Socket, Map<number, string>> = new Map();
@@ -140,9 +140,13 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.story.steps.push(newStep);
     }
 
+    if (this.schedulerRegistry.doesExist('interval', `step-${stepNumber}`)) {
+      this.schedulerRegistry.deleteInterval(`step-${stepNumber}`);
+    }
+
     setTimeout(() => {
       this.startTimer(stepNumber);
-    }, 3000);
+    }, 2000);
 
     this.server.emit('story-update', this.story);
   }
@@ -174,11 +178,38 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.emit('step-time', { stepOrder, timeLeft });
       if (timeLeft === 0) {
         this.schedulerRegistry.deleteInterval(`step-${stepOrder}`);
+        this.handleTimerEnd(stepOrder);
       }
       timeLeft--;
     };
 
     const stepInterval = setInterval(stepIntervalFn, 1000);
     this.schedulerRegistry.addInterval(`step-${stepOrder}`, stepInterval);
+  }
+
+  handleTimerEnd(stepOrder: number) {
+    const step = this.story.steps.find(({ order }) => order === stepOrder);
+
+    if (!step) {
+      this.server.emit(
+        'story-error',
+        new Error('Cannot end step #' + stepOrder),
+      );
+    }
+
+    const selectedEmoji = step.emojiContender.reduce(
+      (prev, current) => {
+        if (current.votes > prev.votes) {
+          return current;
+        }
+
+        return prev;
+      },
+      { votes: 0, value: '' },
+    );
+
+    step.selectedEmoji = selectedEmoji.value;
+
+    this.server.emit('story-update', this.story);
   }
 }
