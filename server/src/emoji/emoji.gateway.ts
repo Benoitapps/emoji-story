@@ -11,6 +11,7 @@ import { Socket } from 'socket.io';
 import { ServerToClientEvent, ClientToServerEvent } from 'interface/event';
 import { Emoji, Story } from 'interface/emoji';
 import { SchedulerRegistry } from '@nestjs/schedule';
+import { EmojiService } from './emoji.service';
 
 @WebSocketGateway({
   cors: true,
@@ -31,7 +32,10 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     steps: [],
   };
 
-  constructor(private schedulerRegistry: SchedulerRegistry) {}
+  constructor(
+    private schedulerRegistry: SchedulerRegistry,
+    private storyService: EmojiService,
+  ) {}
 
   // Ils sont beaux mes émojis ?
   handleDisconnect(client: Socket) {
@@ -118,7 +122,7 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleStepGeneration(client: Socket, { stepNumber }: { stepNumber: number }) {
     // if stepNumber = 1 & storyLength = 1
     const storyLength = this.story.steps.length;
-    if (stepNumber < 1 || stepNumber >= this.stepLimit) {
+    if (stepNumber < 1 || stepNumber > this.stepLimit) {
       client.emit('user-error', 'Invalid step number');
       return;
     }
@@ -187,7 +191,7 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.schedulerRegistry.addInterval(`step-${stepOrder}`, stepInterval);
   }
 
-  handleTimerEnd(stepOrder: number) {
+  async handleTimerEnd(stepOrder: number) {
     const step = this.story.steps.find(({ order }) => order === stepOrder);
 
     if (!step) {
@@ -211,5 +215,15 @@ export class EmojiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     step.selectedEmoji = selectedEmoji.value;
 
     this.server.emit('story-update', this.story);
+
+    if (stepOrder === this.stepLimit) {
+      const storyGPT = await this.storyService.generateStory(
+        this.story.steps.map((s) => s.selectedEmoji),
+      );
+
+      this.story.storyGPT = storyGPT;
+
+      this.server.emit('story-update', this.story);
+    }
   }
 }

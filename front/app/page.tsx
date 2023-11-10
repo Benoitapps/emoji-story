@@ -23,15 +23,15 @@ export default function Home() {
 
     socket.on("step-time", ({ stepOrder, timeLeft }) => {
       setTimeLeftPerStep({ [stepOrder]: timeLeft });
-      if (window.location.href.includes('#step'+stepOrder)) {
-        toast('🦄 Wow so easy!', {
+      if (window.location.href.includes("#step" + stepOrder)) {
+        toast("🦄 Wow so easy!", {
           position: "top-right",
           autoClose: 1000,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          });
+        });
       }
     });
 
@@ -40,12 +40,16 @@ export default function Home() {
     };
   }, []);
 
-
   const handleVote = (emoji: string, stepOrder: number) => {
     socket.emit("step-vote", { stepOrder, emoji });
   };
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 gap-8">
+      {story?.storyGPT && (
+        <div className="w-full glass p-10">
+          <p>{story.storyGPT}</p>
+        </div>
+      )}
       <div className="my-4">
         <button
           className="btn btn-primary btn-wide"
