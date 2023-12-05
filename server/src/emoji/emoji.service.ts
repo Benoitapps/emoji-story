@@ -8,11 +8,11 @@ export class EmojiService {
   async generateStory(emojiList: string[]): Promise<string> {
     try {
       const { data } = await this.openai.createCompletion({
-        model: 'gpt-3.5-turbo',
-        prompt: `Generate a story from these emoji: ${emojiList.join(
-          ', ',
-        )}. The story should be 100 words log maximum, based on current event or mythological stories. Give me the story in french.`,
+        model: 'gpt-3.5-turbo-instruct',
+        prompt: [{}],
         stream: false,
+        max_tokens: 500,
+        temperature: 0.9,
       });
 
       return data.choices[0].text;

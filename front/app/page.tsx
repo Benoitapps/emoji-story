@@ -2,28 +2,29 @@
 import Step from "@/component/UI/step/Step";
 import { useEffect, useState } from "react";
 import { Story, StoryStep } from "interface/emoji";
-import { ClientToServerEvent, ServerToClientEvent } from "interface/event";
-import { Socket, io } from "socket.io-client";
 import { toast } from "react-toastify";
+import { socket } from "@/service/socket";
+import { signal } from "@preact/signals-react";
 
-const socket: Socket<ServerToClientEvent, ClientToServerEvent> = io(
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000"
-);
+const username = signal("anonymous");
+const currentStep = signal<StoryStep | null>(null);
+const fullStory = signal<Story | null>(null);
 
 export default function Home() {
-  const [story, setStory] = useState<Story>();
   const [timeLeftPerStep, setTimeLeftPerStep] = useState<
     Record<number, number>
   >({});
 
+  const client = socket.value;
+
   useEffect(() => {
-    socket.on("story-update", (data) => {
-      setStory(data);
+    client.on("story-update", (data) => {
+      fullStory.value = data;
     });
 
-    socket.on("step-time", ({ stepOrder, timeLeft }) => {
+    client.on("step-time", ({ stepOrder, timeLeft }) => {
       setTimeLeftPerStep({ [stepOrder]: timeLeft });
-      if (window.location.href.includes("#step" + stepOrder)) {
+      if (window.location.href.includes("#step-" + stepOrder)) {
         toast("🦄 Wow so easy!", {
           position: "top-right",
           autoClose: 1000,
@@ -36,26 +37,26 @@ export default function Home() {
     });
 
     return () => {
-      socket.disconnect();
+      client.disconnect();
     };
-  }, []);
+  }, [client]);
 
   const handleVote = (emoji: string, stepOrder: number) => {
-    socket.emit("step-vote", { stepOrder, emoji });
+    client.emit("step-vote", { stepOrder, emoji });
   };
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 gap-8">
-      {story?.storyGPT && (
+      {fullStory.value?.storyGPT && (
         <div className="w-full glass p-10">
-          <p>{story.storyGPT}</p>
+          <p>{fullStory.value.storyGPT}</p>
         </div>
       )}
       <div className="my-4">
         <button
           className="btn btn-primary btn-wide"
           onClick={() =>
-            socket.emit("story-step-handle", {
-              stepNumber: (story?.steps.length || 0) + 1,
+            client.emit("story-step-handle", {
+              stepNumber: (fullStory.value?.steps.length || 0) + 1,
             })
           }
         >
@@ -63,7 +64,7 @@ export default function Home() {
         </button>
       </div>
       <div className="carousel w-full rounded-box">
-        {story?.steps.map((step) => (
+        {fullStory.value?.steps.map((step) => (
           <div
             id={`step-${step.order}`}
             className="carousel-item relative w-full"
@@ -77,7 +78,9 @@ export default function Home() {
             <div className="absolute flex justify-between transform  left-5 right-5">
               <a
                 href={`#step-${
-                  step.order === 1 ? story.steps.length : step.order - 1
+                  step.order === 1
+                    ? fullStory.value?.steps.length
+                    : step.order - 1
                 }`}
                 className="btn btn-circle btn-info"
               >
@@ -85,7 +88,9 @@ export default function Home() {
               </a>
               <a
                 href={`#step-${
-                  story.steps.length <= step.order ? 1 : step.order + 1
+                  fullStory.value?.steps.length <= step.order
+                    ? 1
+                    : step.order + 1
                 }`}
                 className="btn btn-circle btn-info"
               >
@@ -95,6 +100,7 @@ export default function Home() {
           </div>
         ))}
       </div>
+      {" "}
     </main>
   );
 }
